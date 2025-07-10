@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Font to SVG Path Extractor</title>
+    <title>font2svg</title>
     <link
       rel="stylesheet"
       href="https://www.nerdfonts.com/assets/css/webfont.css"
@@ -13,147 +13,218 @@
   </head>
   <body>
     <div class="container">
-      <div class="header">
-        <h1>🎨 Font to SVG Path Extractor</h1>
-        <p>Extract SVG paths from any font file</p>
+      <div class="title-container">
+        <h1 class="title">font2svg<span class="underscore">_</span></h1>
       </div>
 
-      <div class="font-loader">
-        <h3>📁 Load Font File</h3>
-        <div class="file-input-wrapper">
+      <div class="upload-section-container">
+        <div class="upload-section" id="uploadSection">
+          <p style="margin-bottom: 20px; font-size: 18px">
+            drop your font file here or click to browse
+          </p>
+          <button class="upload-btn" id="chooseFileBtn">click</button>
           <input
             type="file"
             id="fontFile"
             class="file-input"
             accept=".ttf,.otf,.woff,.woff2"
           />
-          <label for="fontFile" class="file-input-label">
-            <i class="nf nf-fa-upload"></i>
-            Choose Font File (.ttf, .otf, .woff, .woff2)
-          </label>
         </div>
-        <div id="fontStatus" class="font-status" style="display: none"></div>
+        <div id="fontInfo"></div>
       </div>
+      <div id="status"></div>
 
-      <div class="search-section">
-        <div class="search-box">
-          <input
-            type="text"
-            class="search-input"
-            id="searchInput"
-            placeholder="Search icons..."
-            disabled
-          />
-          <i class="nf nf-fa-search search-icon"></i>
-        </div>
-
-        <div class="filter-section" id="filterSection">
-          <div class="filter-btn active" onclick="filterByCategory('all')">
-            All
-          </div>
-        </div>
-
-        <div class="stats" id="stats">
-          Load a font file to see available icons
-        </div>
-      </div>
-
-      <div class="icons-grid" id="iconsGrid">
-        <div class="no-results">
-          <i class="nf nf-fa-font"></i>
-          <p>Load a font file to extract SVG paths</p>
-        </div>
-      </div>
-
-      <div class="selected-section" id="selectedSection">
-        <div class="selected-info">
-          <div class="selected-icon" id="selectedIcon"></div>
-          <div class="selected-details">
-            <h3 id="selectedName">Icon Name</h3>
-            <p><strong>Unicode:</strong> <span id="selectedUnicode"></span></p>
-            <p>
-              <strong>Glyph Index:</strong>
-              <span id="selectedGlyphIndex"></span>
-            </p>
-            <p>
-              <strong>Category:</strong> <span id="selectedCategory"></span>
-            </p>
-          </div>
-        </div>
-
-        <div class="export-controls">
-          <div class="control-group">
-            <label for="svgSize">Size (px)</label>
-            <input type="number" id="svgSize" value="24" min="8" max="512" />
-          </div>
-          <div class="control-group">
-            <label for="svgColor">Fill Color</label>
-            <input type="color" id="svgColor" value="#000000" />
-          </div>
-          <div class="control-group">
-            <label for="svgStroke">Stroke Color</label>
-            <input type="color" id="svgStroke" value="#000000" />
-          </div>
-          <div class="control-group">
-            <label for="svgStrokeWidth">Stroke Width</label>
+      <div class="operations-grid" id="operationsGrid" style="display: none">
+        <!-- Search Section -->
+        <div class="operation-card search-card">
+          <h3>search</h3>
+          <div class="form-group">
+            <!-- <label for="searchInput">find icons:</label> -->
             <input
-              type="number"
-              id="svgStrokeWidth"
-              value="0"
-              min="0"
-              max="10"
-              step="0.1"
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="search..."
+              disabled
             />
           </div>
-          <div class="control-group">
-            <label for="svgOptimize">Optimize</label>
-            <select id="svgOptimize">
-              <option value="false">Keep Original</option>
-              <option value="true">Optimize Paths</option>
-            </select>
+          <div class="filter-section" id="filterSection">
+            <div
+              class="filter-btn active"
+              onclick="filterByCategory('all', event)"
+            >
+              all
+            </div>
+          </div>
+          <div class="stats" id="stats">
+            load a font file to see available icons
+          </div>
+
+          <!-- Icons Grid moved inside search card -->
+          <div class="icons-grid" id="iconsGrid">
+            <div class="no-results">
+              <i class="nf nf-fa-font"></i>
+              <p>load a font file to extract svg paths</p>
+            </div>
           </div>
         </div>
 
-        <div class="action-buttons">
-          <button
-            class="btn btn-primary"
-            onclick="generateSVGPath()"
-            disabled
-            id="generateBtn"
-          >
-            <i class="nf nf-fa-code"></i> Extract SVG Path
-          </button>
-          <button
-            class="btn btn-secondary"
-            onclick="copySVG()"
-            disabled
-            id="copyBtn"
-          >
-            <i class="nf nf-fa-copy"></i> Copy SVG
-          </button>
-          <button
-            class="btn btn-secondary"
-            onclick="downloadSVG()"
-            disabled
-            id="downloadBtn"
-          >
-            <i class="nf nf-fa-download"></i> Download SVG
-          </button>
-          <button
-            class="btn btn-secondary"
-            onclick="copyPath()"
-            disabled
-            id="copyPathBtn"
-          >
-            <i class="nf nf-fa-route"></i> Copy Path Only
-          </button>
-        </div>
+        <!-- Export Controls - Hidden initially
+        <div class="export-actions-row" id="exportRow" style="display: none">
+          <div class="operation-card" id="exportCard">
+            <h3>export settings</h3>
+            <div class="export-settings-grid">
+              <div class="form-group">
+                <label for="svgSize">size (px):</label>
+                <input
+                  type="number"
+                  id="svgSize"
+                  value="24"
+                  min="8"
+                  max="512"
+                />
+              </div>
+              <div class="form-group">
+                <label for="svgColor">fill color:</label>
+                <input type="color" id="svgColor" value="#000000" />
+              </div>
+              <div class="form-group">
+                <label for="svgStroke">stroke color:</label>
+                <input type="color" id="svgStroke" value="#000000" />
+              </div>
+              <div class="form-group">
+                <label for="svgStrokeWidth">stroke width:</label>
+                <input
+                  type="number"
+                  id="svgStrokeWidth"
+                  value="0"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                />
+              </div>
+              <div class="form-group">
+                <label for="svgOptimize">optimize paths:</label>
+                <select id="svgOptimize">
+                  <option value="false">keep original</option>
+                  <option value="true">optimize paths</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div> -->
 
-        <div class="svg-preview" id="svgPreview" style="display: none">
-          <div class="svg-visual-preview" id="svgVisualPreview"></div>
-          <h4>SVG Code:</h4>
-          <div class="svg-output" id="svgOutput"></div>
+        <!-- Actions and Selected Icon - Hidden initially -->
+        <div class="actions-selected-row hidden" id="actionsSelectedRow">
+          <!-- Selected Icon Info -->
+          <div class="operation-card" id="selectedCard">
+            <h3>selected icon</h3>
+            <div class="selected-info">
+              <div class="selected-icon" id="selectedIcon"></div>
+              <div class="selected-details">
+                <p><strong>name:</strong> <span id="selectedName">-</span></p>
+                <p>
+                  <strong>unicode:</strong> <span id="selectedUnicode">-</span>
+                </p>
+                <p>
+                  <strong>glyph index:</strong>
+                  <span id="selectedGlyphIndex">-</span>
+                </p>
+                <p>
+                  <strong>category:</strong>
+                  <span id="selectedCategory">-</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="operation-card" id="exportCard">
+            <h3>export settings</h3>
+            <div class="export-settings-grid">
+              <div class="form-group">
+                <label for="svgSize">size (px):</label>
+                <input
+                  type="number"
+                  id="svgSize"
+                  value="24"
+                  min="8"
+                  max="512"
+                />
+              </div>
+              <div class="form-group">
+                <label for="svgColor">fill color:</label>
+                <input type="color" id="svgColor" value="#000000" />
+              </div>
+              <div class="form-group">
+                <label for="svgStroke">stroke color:</label>
+                <input type="color" id="svgStroke" value="#000000" />
+              </div>
+              <div class="form-group">
+                <label for="svgStrokeWidth">stroke width:</label>
+                <input
+                  type="number"
+                  id="svgStrokeWidth"
+                  value="0"
+                  min="0"
+                  max="10"
+                  step="0.1"
+                />
+              </div>
+              <div class="form-group">
+                <label for="svgOptimize">optimize paths:</label>
+                <select id="svgOptimize">
+                  <option value="false">keep original</option>
+                  <option value="true">optimize paths</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="operation-card" id="actionsCard">
+            <h3>actions</h3>
+            <div class="actions-grid">
+              <button
+                class="action-btn"
+                onclick="generateSVGPath()"
+                disabled
+                id="generateBtn"
+              >
+                extract svg path
+              </button>
+              <button
+                class="action-btn"
+                onclick="copySVG(this)"
+                disabled
+                id="copyBtn"
+              >
+                copy svg
+              </button>
+              <button
+                class="action-btn"
+                onclick="downloadSVG()"
+                disabled
+                id="downloadBtn"
+              >
+                download svg
+              </button>
+              <button
+                class="action-btn"
+                onclick="copyPath(this)"
+                disabled
+                id="copyPathBtn"
+              >
+                copy path only
+              </button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div class="svg-preview" id="svgPreview" style="display: none">
+        <div class="svg-visual-preview" id="svgVisualPreview"></div>
+        <h4>svg code:</h4>
+        <div class="svg-output" id="svgOutput"></div>
       </div>
     </div>
 

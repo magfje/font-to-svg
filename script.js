@@ -14,27 +14,32 @@ document
     const file = e.target.files[0];
     if (!file) return;
 
-    const statusDiv = document.getElementById("fontStatus");
+    const statusDiv = document.getElementById("status");
     statusDiv.style.display = "block";
-    statusDiv.className = "font-status loading";
-    statusDiv.textContent = "Loading font file...";
+    statusDiv.className = "status processing";
+    statusDiv.textContent = "loading font file...";
 
     try {
       const arrayBuffer = await file.arrayBuffer();
       loadedFont = opentype.parse(arrayBuffer);
 
-      statusDiv.className = "font-status success";
-      statusDiv.textContent = `✅ Font loaded: ${loadedFont.names.fontFamily.en} (${loadedFont.glyphs.length} glyphs)`;
+      statusDiv.className = "status success";
+      statusDiv.textContent = `font loaded: ${loadedFont.names.fontFamily.en} (${loadedFont.glyphs.length} glyphs)`;
 
       // Process the font
       processFontGlyphs();
       enableInterface();
     } catch (error) {
-      statusDiv.className = "font-status error";
-      statusDiv.textContent = `❌ Error loading font: ${error.message}`;
+      statusDiv.className = "status error";
+      statusDiv.textContent = `error loading font: ${error.message}`;
       console.error("Font loading error:", error);
     }
   });
+
+// Handle upload button click
+document.getElementById("chooseFileBtn").addEventListener("click", function () {
+  document.getElementById("fontFile").click();
+});
 
 function processFontGlyphs() {
   fontIcons = [];
@@ -131,6 +136,7 @@ function enableInterface() {
   document.getElementById("copyBtn").disabled = false;
   document.getElementById("downloadBtn").disabled = false;
   document.getElementById("copyPathBtn").disabled = false;
+  document.getElementById("operationsGrid").style.display = "block";
 }
 
 function generateFilters() {
@@ -142,15 +148,18 @@ function generateFilters() {
   const categoryButtons = categories
     .map((category) => {
       const displayName = category.charAt(0).toUpperCase() + category.slice(1);
-      return `<div class="filter-btn" onclick="filterByCategory('${category}')">${displayName}</div>`;
+      return `<div class="filter-btn" onclick="filterByCategory('${category}', event)">${displayName}</div>`;
     })
     .join("");
 
   filterSection.innerHTML = `
-            <div class="filter-btn active" onclick="filterByCategory('all')">All</div>
+            <div class="filter-btn active" onclick="filterByCategory('all', event)">all</div>
             ${categoryButtons}
         `;
 }
+
+// Add search functionality
+document.getElementById("searchInput").addEventListener("input", searchIcons);
 
 function renderIcons() {
   const grid = document.getElementById("iconsGrid");
@@ -160,24 +169,24 @@ function renderIcons() {
     grid.innerHTML = `
                 <div class="no-results">
                     <i class="nf nf-fa-search"></i>
-                    <p>No icons found</p>
+                    <p>no icons found</p>
                 </div>
             `;
-    stats.textContent = "No icons found";
+    stats.textContent = "no icons found";
     return;
   }
 
-  stats.textContent = `Showing ${filteredIcons.length} of ${fontIcons.length} icons`;
+  stats.textContent = `showing ${filteredIcons.length} of ${fontIcons.length} icons`;
 
   grid.innerHTML = filteredIcons
     .map(
       (icon, index) => `
-            <div class="icon-item" onclick="selectIcon(${index})">
+            <div class="icon-item" onclick="selectIcon(${index}, event)">
                 <div class="icon-display" style="font-family: '${loadedFont.names.fontFamily.en}';">
                     ${icon.unicode}
                 </div>
                 <div class="icon-name">${icon.name}</div>
-                <div class="icon-code">U+${icon.hexCode}</div>
+                <div class="icon-code">u+${icon.hexCode}</div>
             </div>
         `
     )
@@ -197,7 +206,7 @@ function searchIcons() {
   renderIcons();
 }
 
-function filterByCategory(category) {
+function filterByCategory(category, event) {
   currentCategory = category;
 
   document.querySelectorAll(".filter-btn").forEach((btn) => {
@@ -208,7 +217,7 @@ function filterByCategory(category) {
   searchIcons();
 }
 
-function selectIcon(index) {
+function selectIcon(index, event) {
   selectedIcon = filteredIcons[index];
 
   document.querySelectorAll(".icon-item").forEach((item) => {
@@ -216,7 +225,9 @@ function selectIcon(index) {
   });
   event.currentTarget.classList.add("selected");
 
-  document.getElementById("selectedSection").classList.add("show");
+  // Show the export settings row and actions/selected row
+  // document.getElementById("exportRow").style.display = "block";
+  document.getElementById("actionsSelectedRow").classList.remove("hidden");
 
   document.getElementById("selectedIcon").innerHTML = selectedIcon.unicode;
   document.getElementById(
@@ -225,7 +236,7 @@ function selectIcon(index) {
   document.getElementById("selectedName").textContent = selectedIcon.name;
   document.getElementById(
     "selectedUnicode"
-  ).textContent = `U+${selectedIcon.hexCode}`;
+  ).textContent = `u+${selectedIcon.hexCode}`;
   document.getElementById("selectedGlyphIndex").textContent =
     selectedIcon.glyphIndex;
   document.getElementById("selectedCategory").textContent =
@@ -341,16 +352,16 @@ function generateSVGPath() {
   }
 }
 
-function copySVG() {
+function copySVG(button) {
   if (!generatedSVG) generateSVGPath();
   if (!generatedSVG) return;
 
   navigator.clipboard.writeText(generatedSVG).then(() => {
-    showSuccessFeedback(event.currentTarget, "SVG Copied!");
+    showSuccessFeedback(button, "SVG Copied!");
   });
 }
 
-function copyPath() {
+function copyPath(button) {
   if (!selectedIcon || !loadedFont) return;
 
   const glyph = selectedIcon.glyph;
@@ -420,7 +431,7 @@ function copyPath() {
     }
 
     navigator.clipboard.writeText(pathData).then(() => {
-      showSuccessFeedback(event.currentTarget, "Path Copied!");
+      showSuccessFeedback(button, "Path Copied!");
     });
   } catch (error) {
     console.error("Error copying path:", error);
@@ -458,15 +469,3 @@ function showSuccessFeedback(button, message) {
 
 // Event listeners
 document.getElementById("searchInput").addEventListener("input", searchIcons);
-
-// Allow users to add their glyphs mapping
-window.addGlyphsMapping = function (glyphsObject) {
-  window.userGlyphs = glyphsObject;
-  if (loadedFont) {
-    processFontGlyphs();
-  }
-};
-
-console.log(
-  "💡 Tip: If you have a glyphs mapping object, call window.addGlyphsMapping(glyphsObject) to enhance glyph names and categories"
-);
